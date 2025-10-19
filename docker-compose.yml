@@ -1,21 +1,25 @@
-version: '3.8'
+version: "3.8"
 
 services:
   email-api:
     build: .
     container_name: email-api-service
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "${PORT:-8700}"  # só expõe internamente; Coolify faz o proxy
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-3000}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - FROM_EMAIL=${FROM_EMAIL}
-      - FROM_NAME=${FROM_NAME:-Email API Service}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-15}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-10}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-8700}
+      SERVICE_FQDN_EMAIL_API: ${SERVICE_FQDN_EMAIL_API}
+      SERVICE_URL_EMAIL_API: ${SERVICE_URL_EMAIL_API}
+      FROM_EMAIL: ${FROM_EMAIL}
+      FROM_NAME: ${FROM_NAME}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      OFFER_URL: ${OFFER_URL}
+      PRODUCT_NAME: ${PRODUCT_NAME}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-10}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-15}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
     volumes:
       - ./leads:/app/leads
       - ./ebooks:/app/ebooks
@@ -23,11 +27,16 @@ services:
     networks:
       - email-api-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get(`http://localhost:${process.env.PORT || 8700}/health`, (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
-      timeout: 3s
+      timeout: 5s
       retries: 3
       start_period: 5s
+    labels:
+      # indica ao Coolify que este container serve HTTP
+      coolify.type: "http"
+      coolify.expose.port: "${PORT:-8700}"
+      coolify.expose.proto: "http"
 
 networks:
   email-api-network:
