@@ -1,24 +1,27 @@
-FROM node:18-alpine
-
-# Create app directory
+# Etapa 1: build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install dependencies
+# Copia arquivos e instala dependências
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --only=production
 
-# Copy app source
+# Copia o restante da aplicação
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/leads /app/ebooks /app/templates
+# Etapa 2: runtime (container leve)
+FROM node:20-alpine
+WORKDIR /app
 
-# Expose port
-EXPOSE 3000
+# Copia os arquivos da etapa anterior
+COPY --from=builder /app /app
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Define variáveis padrão (importantes para o Coolify)
+ENV NODE_ENV=production
+ENV PORT=8700
 
-# Start the application
-CMD ["npm", "start"]
+# Expõe a porta real do servidor (a mesma usada no app)
+EXPOSE 8700
+
+# Inicia o app
+CMD ["node", "server.js"]
