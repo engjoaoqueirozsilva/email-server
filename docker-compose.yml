@@ -6,10 +6,10 @@ services:
     container_name: email-api-service
     restart: unless-stopped
     expose:
-      - "${PORT:-8700}"  # só expõe internamente; Coolify faz o proxy
+      - "${PORT:-3000}"  # só expõe internamente; Coolify faz o proxy
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-8700}
+      PORT: ${PORT:-3000}
       SERVICE_FQDN_EMAIL_API: ${SERVICE_FQDN_EMAIL_API}
       SERVICE_URL_EMAIL_API: ${SERVICE_URL_EMAIL_API}
       FROM_EMAIL: ${FROM_EMAIL}
@@ -27,7 +27,7 @@ services:
     networks:
       - email-api-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8700/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -35,7 +35,7 @@ services:
     labels:
       # indica ao Coolify que este container serve HTTP
       coolify.type: "http"
-      coolify.expose.port: "${PORT:-8700}"
+      coolify.expose.port: "${PORT:-3000}"
       coolify.expose.proto: "http"
 
 networks:
