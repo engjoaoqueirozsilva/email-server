@@ -5,39 +5,39 @@ services:
     build: .
     container_name: email-api-service
     restart: unless-stopped
+
+    # Exponha a porta interna (Coolify cuida do proxy externo)
     expose:
-      - 3000
+      - "3000"
+
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
-      SERVICE_FQDN_EMAIL_API: ${SERVICE_FQDN_EMAIL_API}
-      SERVICE_URL_EMAIL_API: ${SERVICE_URL_EMAIL_API}
+      PORT: 3000
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       FROM_EMAIL: ${FROM_EMAIL}
-      FROM_NAME: ${FROM_NAME}
+      FROM_NAME: ${FROM_NAME:-Email API Service}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       OFFER_URL: ${OFFER_URL}
       PRODUCT_NAME: ${PRODUCT_NAME}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-10}
       RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-15}
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+
     volumes:
       - ./leads:/app/leads
       - ./ebooks:/app/ebooks
       - ./templates:/app/templates
-    networks:
-      - email-api-network
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 5s
-    labels:
-      # indica ao Coolify que este container serve HTTP
-      coolify.type: "http"
-      coolify.expose.port: 3000
-      coolify.expose.proto: "http"
+
+    networks:
+      - email-api-network
 
 networks:
   email-api-network:
     driver: bridge
+    

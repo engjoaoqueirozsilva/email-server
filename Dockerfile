@@ -1,24 +1,27 @@
-FROM node:18-alpine
-
-# Create app directory
+# Etapa de build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install dependencies
+# Instala dependências
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --only=production
 
-# Copy app source
+# Copia código
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/leads /app/ebooks /app/templates
+# Etapa final (runtime)
+FROM node:20-alpine
+WORKDIR /app
 
-# Expose port
+# Copia app construído
+COPY --from=builder /app /app
+
+# Define variáveis padrão
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expõe a porta interna usada pelo Coolify e pelo Traefik
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Start the application
-CMD ["npm", "start"]
+# Inicializa o app
+CMD ["node", "server.js"]
